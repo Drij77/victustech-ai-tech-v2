@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Securing the Digital with AI</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --cyan: #00f5ff;
+      --blue: #0a84ff;
+      --purple: #bf5af2;
+      --dark: #020c1b;
+      --dark2: #0d1f3c;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: var(--dark);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    /* ── CANVAS ── */
+    #bg { position: fixed; inset: 0; z-index: 0; }
+
+    /* ── GRID OVERLAY ── */
+    .grid {
+      position: fixed; inset: 0; z-index: 1;
+      background-image:
+        linear-gradient(rgba(0,245,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,245,255,.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      animation: gridPulse 8s ease-in-out infinite;
+    }
+    @keyframes gridPulse {
+      0%,100% { opacity: .6 }
+      50%      { opacity: 1 }
+    }
+
+    /* ── SCAN LINE ── */
+    .scan {
+      position: fixed; left: 0; right: 0; height: 2px; z-index: 2;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      animation: scan 6s linear infinite;
+      opacity: .35;
+    }
+    @keyframes scan { from { top: -2px } to { top: 100vh } }
+
+    /* ── MAIN CONTENT ── */
+    .stage {
+      position: relative; z-index: 10;
+      width: 100%; height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 2rem;
+    }
+
+    /* ── SHIELD ICON ── */
+    .shield-wrap {
+      position: relative;
+      width: 120px; height: 120px;
+      display: flex; align-items: center; justify-content: center;
+      animation: floatY 4s ease-in-out infinite;
+    }
+    @keyframes floatY {
+      0%,100% { transform: translateY(0) }
+      50%      { transform: translateY(-14px) }
+    }
+
+    .shield-wrap::before {
+      content: '';
+      position: absolute; inset: -18px;
+      border-radius: 50%;
+      border: 2px solid rgba(0,245,255,.25);
+      animation: ringPulse 3s ease-in-out infinite;
+    }
+    .shield-wrap::after {
+      content: '';
+      position: absolute; inset: -34px;
+      border-radius: 50%;
+      border: 1px solid rgba(10,132,255,.18);
+      animation: ringPulse 3s ease-in-out infinite .6s;
+    }
+    @keyframes ringPulse {
+      0%,100% { transform: scale(1); opacity:.8 }
+      50%      { transform: scale(1.12); opacity:.3 }
+    }
+
+    svg.shield {
+      width: 90px; height: 90px;
+      filter: drop-shadow(0 0 18px rgba(0,245,255,.7))
+              drop-shadow(0 0 40px rgba(10,132,255,.4));
+    }
+
+    /* circuit lines inside shield */
+    .circuit-path {
+      stroke-dasharray: 200;
+      stroke-dashoffset: 200;
+      animation: drawPath 2s ease forwards .8s;
+    }
+    @keyframes drawPath {
+      to { stroke-dashoffset: 0 }
+    }
+
+    /* ── HEADLINE ── */
+    .headline {
+      text-align: center;
+      line-height: 1.12;
+    }
+    .headline .pre {
+      display: block;
+      font-size: clamp(.75rem, 1.5vw, .9rem);
+      letter-spacing: .35em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp .7s ease forwards .3s;
+    }
+    .headline h1 {
+      font-size: clamp(2.4rem, 6vw, 5.2rem);
+      font-weight: 800;
+      letter-spacing: -.01em;
+      color: #fff;
+      opacity: 0;
+      transform: translateY(30px);
+      animation: fadeUp .8s ease forwards .6s;
+    }
+    .headline h1 .accent {
+      background: linear-gradient(135deg, var(--cyan) 0%, var(--blue) 50%, var(--purple) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0) }
+    }
+
+    /* ── TYPEWRITER SLOGAN ── */
+    .slogan-wrap {
+      font-size: clamp(1rem, 2.2vw, 1.45rem);
+      font-weight: 300;
+      color: rgba(255,255,255,.7);
+      letter-spacing: .05em;
+      min-height: 2em;
+      display: flex; align-items: center; gap: .15em;
+      opacity: 0;
+      animation: fadeUp .6s ease forwards 1.2s;
+    }
+    .typed { color: #fff; font-weight: 400; }
+    .cursor {
+      display: inline-block;
+      width: 2px; height: 1.1em;
+      background: var(--cyan);
+      animation: blink .8s step-end infinite;
+      vertical-align: text-bottom;
+      box-shadow: 0 0 8px var(--cyan);
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    /* ── DATA PARTICLES (CSS only dots) ── */
+    .particles {
+      position: fixed; inset: 0; z-index: 3; pointer-events: none;
+    }
+    .dot {
+      position: absolute;
+      width: 3px; height: 3px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 6px var(--cyan);
+      animation: drift linear infinite;
+      opacity: 0;
+    }
+    @keyframes drift {
+      0%   { transform: translateY(100vh) translateX(0);   opacity: 0 }
+      10%  { opacity: .8 }
+      90%  { opacity: .6 }
+      100% { transform: translateY(-10vh) translateX(var(--dx)); opacity: 0 }
+    }
+
+    /* ── GLOW ORBS ── */
+    .orb {
+      position: fixed; border-radius: 50%;
+      filter: blur(80px); z-index: 0; pointer-events: none;
+      animation: orbFloat ease-in-out infinite;
+    }
+    .orb1 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(10,132,255,.18) 0%, transparent 70%);
+      top: -120px; left: -120px;
+      animation-duration: 12s;
+    }
+    .orb2 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(191,90,242,.14) 0%, transparent 70%);
+      bottom: -100px; right: -100px;
+      animation-duration: 15s; animation-delay: -5s;
+    }
+    .orb3 {
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(0,245,255,.1) 0%, transparent 70%);
+      top: 40%; left: 50%;
+      animation-duration: 10s; animation-delay: -3s;
+    }
+    @keyframes orbFloat {
+      0%,100% { transform: translate(0,0) scale(1) }
+      33%      { transform: translate(40px,-30px) scale(1.08) }
+      66%      { transform: translate(-20px,20px) scale(.94) }
+    }
+
+    /* ── CTA BUTTON ── */
+    .cta {
+      margin-top: .5rem;
+      padding: .85em 2.4em;
+      border: 1.5px solid var(--cyan);
+      border-radius: 40px;
+      background: transparent;
+      color: var(--cyan);
+      font-size: 1rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      opacity: 0;
+      animation: fadeUp .6s ease forwards 1.8s;
+      transition: color .3s, box-shadow .3s;
+    }
+    .cta::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: var(--cyan);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform .35s ease;
+      z-index: -1;
+    }
+    .cta:hover { color: var(--dark); box-shadow: 0 0 30px rgba(0,245,255,.5); }
+    .cta:hover::before { transform: scaleX(1); }
+
+    /* ── BOTTOM TAG ── */
+    .tag {
+      position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
+      font-size: .75rem; letter-spacing: .2em; text-transform: uppercase;
+      color: rgba(255,255,255,.2);
+      z-index: 10;
+      animation: fadeUp .6s ease forwards 2.2s; opacity: 0;
+    }
+    .tag span { color: rgba(0,245,255,.4); }
+  </style>
+</head>
+<body>
+
+  <!-- Orbs -->
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+
+  <!-- Grid + scan -->
+  <div class="grid"></div>
+  <div class="scan"></div>
+
+  <!-- CSS particle dots -->
+  <div class="particles" id="particles"></div>
+
+  <!-- Main stage -->
+  <div class="stage">
+
+    <!-- Animated shield -->
+    <div class="shield-wrap">
+      <svg class="shield" viewBox="0 0 90 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="sg" x1="0" y1="0" x2="90" y2="90" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#00f5ff"/>
+            <stop offset="50%" stop-color="#0a84ff"/>
+            <stop offset="100%" stop-color="#bf5af2"/>
+          </linearGradient>
+        </defs>
+        <!-- Shield body -->
+        <path d="M45 6 L78 18 L78 45 C78 62 62 76 45 84 C28 76 12 62 12 45 L12 18 Z"
+              fill="rgba(0,245,255,.06)" stroke="url(#sg)" stroke-width="2"/>
+        <!-- Circuit lines -->
+        <g stroke="#00f5ff" stroke-width="1.2" stroke-linecap="round">
+          <polyline class="circuit-path" points="32,38 38,38 38,32 52,32 52,38 58,38"/>
+          <polyline class="circuit-path" points="45,32 45,26"/>
+          <polyline class="circuit-path" points="32,52 45,52 45,58 52,58"/>
+          <circle cx="32" cy="38" r="2.5" fill="#00f5ff" opacity=".7"/>
+          <circle cx="58" cy="38" r="2.5" fill="#00f5ff" opacity=".7"/>
+          <circle cx="45" cy="26" r="2.5" fill="#bf5af2" opacity=".7"/>
+          <circle cx="52" cy="58" r="2.5" fill="#0a84ff" opacity=".7"/>
+        </g>
+        <!-- Center AI dot -->
+        <circle cx="45" cy="45" r="5" fill="url(#sg)" opacity=".9">
+          <animate attributeName="r" values="5;7;5" dur="2s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values=".9;.4;.9" dur="2s" repeatCount="indefinite"/>
+        </circle>
+      </svg>
+    </div>
+
+    <!-- Headline -->
+    <div class="headline">
+      <span class="pre">VictusTech &nbsp;|&nbsp; Next-Gen Cybersecurity</span>
+      <h1>Securing the <span class="accent">Digital</span><br/>with <span class="accent">AI</span></h1>
+    </div>
+
+    <!-- Typewriter -->
+    <div class="slogan-wrap">
+      <span class="typed" id="typed"></span><span class="cursor"></span>
+    </div>
+
+  </div>
+
+  <div class="tag">Powered by <span>Artificial Intelligence</span></div>
+
+  <script>
+    /* ── TYPEWRITER ── */
+    const phrases = [
+      "Real-time threat detection.",
+      "Zero-day vulnerability defense.",
+      "AI-driven security intelligence.",
+      "Your digital world, protected."
+    ];
+    let pi = 0, ci = 0, deleting = false;
+    const el = document.getElementById('typed');
+
+    function type() {
+      const phrase = phrases[pi];
+      if (!deleting) {
+        el.textContent = phrase.slice(0, ++ci);
+        if (ci === phrase.length) { deleting = true; setTimeout(type, 2000); return; }
+      } else {
+        el.textContent = phrase.slice(0, --ci);
+        if (ci === 0) { deleting = false; pi = (pi + 1) % phrases.length; }
+      }
+      setTimeout(type, deleting ? 45 : 75);
+    }
+    setTimeout(type, 1600);
+
+    /* ── PARTICLE DOTS ── */
+    const container = document.getElementById('particles');
+    for (let i = 0; i < 40; i++) {
+      const d = document.createElement('div');
+      d.className = 'dot';
+      const left = Math.random() * 100;
+      const dur  = 8 + Math.random() * 14;
+      const delay = Math.random() * -20;
+      const dx   = (Math.random() - .5) * 120;
+      d.style.cssText = `
+        left: ${left}%;
+        --dx: ${dx}px;
+        animation-duration: ${dur}s;
+        animation-delay: ${delay}s;
+        width:  ${1 + Math.random() * 3}px;
+        height: ${1 + Math.random() * 3}px;
+        opacity: ${.3 + Math.random() * .7};
+        background: ${Math.random() > .6 ? '#0a84ff' : Math.random() > .5 ? '#bf5af2' : '#00f5ff'};
+        box-shadow: 0 0 6px currentColor;
+      `;
+      container.appendChild(d);
+    }
+  </script>
+</body>
+</html>
